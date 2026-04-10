@@ -172,6 +172,47 @@ app.post('/api/generate-plan', async (req, res) => {
       .from('users').select('*').eq('id', user_id).single();
     if (userError || !user) throw new Error(`User not found: ${user_id}`);
 
+    // 2. ── Quick AI Validation ─────────────────────────────────────────────
+    console.log(`🔍 Validating goal input: "${goal_title}"...`);
+    const validationPrompt = `
+      You are a Manifestation Goal Validator. Analyze the user's input and decide if it is a valid personal manifestation goal.
+
+      USER INPUT: "${goal_title}"
+
+      A VALID goal:
+      - Is a real, meaningful personal aspiration (career, health, relationship, finance, skill, creativity, etc.)
+      - Is written in a human language (English or any other)
+      - Is specific enough to mean something (even if short)
+      - Examples: "I want to start my own business", "become a better parent", "learn guitar", "lose 10kg"
+
+      AN INVALID goal is one of these:
+      - Random gibberish or keyboard mashing (e.g. "asdfgh", "sdjksajd", "qwerty123")
+      - Single random characters or numbers only (e.g. "a", "123", "!!!")
+      - Offensive, harmful, or abusive content
+      - Completely unrelated nonsense (e.g. "banana purple sky", "cat dog fish")
+      - Empty meaning or just punctuation
+
+      Respond ONLY with this JSON:
+      {
+        "is_valid": true or false,
+        "reason": "If invalid: a friendly, empathetic 1-2 sentence explanation of why this isn't a valid manifestation goal.",
+        "tip": "If invalid: a helpful suggestion of what a good goal looks like. Leave empty string if valid."
+      }
+    `;
+
+    const validation = await generateAI(validationPrompt, 'You are a strict but kind manifestation goal validator. Return only JSON.');
+    console.log(`🔍 Validation result: ${JSON.stringify(validation)}`);
+
+    if (!validation.is_valid) {
+      return res.json({
+        success: true,
+        valid: false,
+        reason: validation.reason || 'This doesn\'t seem like a manifestation goal.',
+        tip: validation.tip || 'Try describing a real aspiration, like "I want to build a successful career in tech."'
+      });
+    }
+    console.log(`✅ Goal is valid, proceeding with generation...`);
+
     // 2. Build the hyper-personalized prompt
     const prompt = `
       You are a Master Manifestation Architect and Life Coach.
