@@ -50,13 +50,15 @@ app.post('/api/users', async (req, res) => {
   console.log('Incoming user update/creation:', req.body);
   const { id, full_name, avatar_url, personal_answers, family_answers, professional_answers, passcode, email } = req.body;
 
-  // Security Lock: Only Anand can create or update profiles
+  // Security Lock: Temporarily disabled to allow new user creation
+  /*
   if (full_name !== ALLOWED_NAME && email !== ALLOWED_EMAIL) {
     return res.status(403).json({ 
       success: false, 
       message: 'Access Denied: Only the authorized curator can modify this hub.' 
     });
   }
+  */
 
   if (!full_name) {
     return res.status(400).json({ success: false, message: 'Name is required.' });
