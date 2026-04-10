@@ -50,7 +50,7 @@ app.post('/api/users', async (req, res) => {
         })
         .eq('id', id)
         .select();
-      
+
       if (error) throw error;
       result = data[0];
     } else {
@@ -68,7 +68,7 @@ app.post('/api/users', async (req, res) => {
           }
         ])
         .select();
-      
+
       if (error) throw error;
       result = data[0];
     }
@@ -111,9 +111,9 @@ app.get('/api/users/search', async (req, res) => {
     for (let u of matches) {
       const manifestCount = u.manifestations?.[0]?.count || 0;
       const answersFilled = [...(u.personal_answers || []), ...(u.family_answers || []), ...(u.professional_answers || [])].filter(a => a.trim().length > 0).length;
-      
+
       const quality = (manifestCount * 10) + answersFilled; // Manifestations are high priority
-      
+
       if (quality > maxQuality) {
         maxQuality = quality;
         bestMatch = u;
@@ -134,17 +134,21 @@ const fetch = require('node-fetch');
 
 // ─── AI Hub Bridge (Centralized Management) ───────────────────────────
 async function generateAI(prompt, systemPrompt = 'You are a Master Manifestation Coach.') {
-  const hubUrl = process.env.AI_HUB_URL || 'http://localhost:3001/api/generate';
+  const hubUrl = process.env.AI_HUB_URL;
+
+  if (!hubUrl || hubUrl.includes('localhost')) {
+    throw new Error('AI_HUB_URL is not configured for production. Please set it in Vercel Environment Variables.');
+  }
   
   console.log(`📡 Relaying request to AI Hub: ${hubUrl}`);
-  
+
   const response = await fetch(hubUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ 
-      prompt, 
-      systemPrompt, 
-      format: 'json' 
+    body: JSON.stringify({
+      prompt,
+      systemPrompt,
+      format: 'json'
     })
   });
 
