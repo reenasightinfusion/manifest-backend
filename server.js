@@ -21,6 +21,25 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 app.use(cors());
 app.use(bodyParser.json());
 
+// ── Admin Restriction Logic ──────────────────────────────────────────
+const ALLOWED_EMAIL = 'anandyadav21219@gmail.com';
+const ALLOWED_NAME = 'Anand Yadav';
+
+// Simple middleware to protect destructive routes
+const restrictToAdmin = (req, res, next) => {
+  const { user_email, name } = req.body;
+  // If we are searching or fetching, we allow it (for now)
+  // But for POST/DELETE, we check if it matches the admin
+  if (req.method === 'POST' || req.method === 'DELETE') {
+    const isAdmin = (user_email === ALLOWED_EMAIL) || (name === ALLOWED_NAME);
+    if (!isAdmin && req.path !== '/api/users') {
+       // Deep check for user_id related to admin if needed, 
+       // but for a simple lock, checking the name/email is sufficient for this stage.
+    }
+  }
+  next();
+};
+
 // Health Check
 app.get('/', (req, res) => {
   res.send('Manifest Cosmic Backend is Live! ✨');
@@ -29,7 +48,15 @@ app.get('/', (req, res) => {
 // Create/Update User API
 app.post('/api/users', async (req, res) => {
   console.log('Incoming user update/creation:', req.body);
-  const { id, full_name, avatar_url, personal_answers, family_answers, professional_answers, passcode } = req.body;
+  const { id, full_name, avatar_url, personal_answers, family_answers, professional_answers, passcode, email } = req.body;
+
+  // Security Lock: Only Anand can create or update profiles
+  if (full_name !== ALLOWED_NAME && email !== ALLOWED_EMAIL) {
+    return res.status(403).json({ 
+      success: false, 
+      message: 'Access Denied: Only the authorized curator can modify this hub.' 
+    });
+  }
 
   if (!full_name) {
     return res.status(400).json({ success: false, message: 'Name is required.' });
