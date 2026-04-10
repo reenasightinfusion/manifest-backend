@@ -287,6 +287,57 @@ app.post('/api/generate-plan', async (req, res) => {
   }
 });
 
+
+// ─── AI Spiritual Archetype Generator ──────────────────────────────────────────
+app.post('/api/generate-archetype', async (req, res) => {
+  const { user_id } = req.body;
+
+  try {
+    // 1. Fetch User Data
+    const { data: user, error: userError } = await supabase
+      .from('users').select('*').eq('id', user_id).single();
+      
+    if (userError || !user) throw new Error(`User not found: ${user_id}`);
+
+    // If answers are entirely empty, AI still generates based on name
+    const prompt = `
+      You are an insightful spiritual guide and archetype reader.
+      
+      USER PROFILE:
+      - Name: ${user.full_name}
+      - Personal insights: ${(user.personal_answers || []).join(', ')}
+      - Family & Connection insights: ${(user.family_answers || []).join(', ')}
+      - Professional & Ambition insights: ${(user.professional_answers || []).join(', ')}
+      
+      TASK: Determine the spiritual and manifestation archetype for this user based on their insights. 
+      If insights are empty, create a mysterious, generalized archetype based solely on their vibe and name.
+      
+      Return ONLY this precise JSON structure:
+      {
+        "archetype_name": "E.g. The Manifesting Mystic",
+        "header_label": "E.g. COSMIC FOOTPRINT",
+        "essence_label": "E.g. The Soul Essence",
+        "essence_description": "A 3-sentence deep description of their spiritual nature based on their answers.",
+        "strengths_label": "E.g. Core Strengths",
+        "strengths": ["Intuition", "Presence", "Alignment"],
+        "vision_label": "E.g. Spiritual Vision",
+        "vision_text": "A poetic 1-2 sentence vision of their destiny.",
+        "button_label": "Continue My Journey"
+      }
+    `;
+
+    console.log(`🧠 Generating Archetype for ${user.full_name}...`);
+    const aiResponse = await generateAI(prompt, 'You are an archetype generator. Always return valid JSON matching the exact schema.');
+    console.log(`✨ Archetype AI Result ready.`);
+
+    res.json({ success: true, data: aiResponse });
+
+  } catch (error) {
+    console.error('❌ Archetype Error:', error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ─── Fetch Manifestation History (Vision Board) ───────────────────────────
 app.get('/api/history/:userId', async (req, res) => {
   try {
