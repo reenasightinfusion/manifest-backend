@@ -62,6 +62,53 @@ app.post('/api/users', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Name is required.' });
   }
 
+  // ── AI Profile Validation ──────────────────────────────────────────────
+  try {
+    const allAnswers = [
+      ...(personal_answers || []), 
+      ...(family_answers || []), 
+      ...(professional_answers || [])
+    ].filter(a => a && a.trim().length > 0);
+    
+    if (allAnswers.length > 0) {
+      console.log(`🔍 Validating profile answers for: "${full_name}"...`);
+      const validationPrompt = `
+        You are a strict Profile Validator. Analyze the user's answers to an onboarding survey and decide if they are valid, meaningful, and appropriate.
+
+        USER ANSWERS:
+        ${allAnswers.join(' | ')}
+
+        A VALID profile:
+        - Contains real words, meaningful aspirations or even very short sensible responses.
+        - Is safe, respectful, and human-like.
+
+        AN INVALID profile is one of these:
+        - Random gibberish, keyboard mashing (e.g. "asdfgh", "123", "aaaa").
+        - Profanity, abusive language, or highly inappropriate/unsafe content.
+        - Nonsense meant to bypass the system.
+
+        Respond ONLY with this JSON:
+        {
+          "is_valid": true or false,
+          "reason": "If invalid: a friendly, 1-sentence explanation of why these answers cannot be accepted."
+        }
+      `;
+
+      const validation = await generateAI(validationPrompt, 'You are a strict profile validator. Return only JSON.');
+      console.log(`🔍 Profile Validation result: ${JSON.stringify(validation)}`);
+
+      if (!validation.is_valid) {
+        return res.status(400).json({
+          success: false,
+          message: validation.reason || 'Your answers do not seem valid or appropriate. Please provide thoughtful responses.'
+        });
+      }
+    }
+  } catch (aiErr) {
+     console.error("⚠️ AI Validation failed, bypassing for now...", aiErr.message);
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   try {
     let result;
     if (id) {
