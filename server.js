@@ -99,7 +99,7 @@ app.post('/api/users', async (req, res) => {
       const validation = await generateAI(validationPrompt, 'You are a strict profile validator. Return only JSON.');
       console.log(`🔍 Profile Validation result: ${JSON.stringify(validation)}`);
 
-      if (!validation.is_valid) {
+      if (validation && validation.is_valid === false) {
         return res.status(400).json({
           success: false,
           message: validation.reason || 'Your answers do not seem valid or appropriate. Please provide thoughtful responses.'
@@ -107,7 +107,7 @@ app.post('/api/users', async (req, res) => {
       }
     }
   } catch (aiErr) {
-     console.error("⚠️ AI Validation failed, bypassing for now...", aiErr.message);
+     console.error("⚠️ AI Validation failed or returned invalid format, bypassing for now...", aiErr.message);
   }
   // ────────────────────────────────────────────────────────────────────────
 
@@ -128,8 +128,11 @@ app.post('/api/users', async (req, res) => {
         .eq('id', id)
         .select();
 
-      if (error) throw error;
-      result = data[0];
+      if (error) {
+        console.error('Supabase Update Error:', error);
+        throw error;
+      }
+      result = (data && data.length > 0) ? data[0] : null;
     } else {
       // INSERT new user
       const { data, error } = await supabase
@@ -147,8 +150,11 @@ app.post('/api/users', async (req, res) => {
         ])
         .select();
 
-      if (error) throw error;
-      result = data[0];
+      if (error) {
+        console.error('Supabase Insert Error:', error);
+        throw error;
+      }
+      result = (data && data.length > 0) ? data[0] : null;
     }
 
     res.status(id ? 200 : 201).json({
@@ -157,11 +163,17 @@ app.post('/api/users', async (req, res) => {
       data: result
     });
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
     res.status(500).json({
       success: false,
-      message: 'Failed to sync identity.',
-      error: error.message
+      message: `Failed to sync identity: ${error.message || 'Unknown Error'}`,
+      error: error.message,
+      code: error.code
     });
   }
 });
