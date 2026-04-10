@@ -29,7 +29,7 @@ app.get('/', (req, res) => {
 // Create/Update User API
 app.post('/api/users', async (req, res) => {
   console.log('Incoming user update/creation:', req.body);
-  const { id, full_name, avatar_url, personal_answers, family_answers, professional_answers } = req.body;
+  const { id, full_name, avatar_url, personal_answers, family_answers, professional_answers, passcode } = req.body;
 
   if (!full_name) {
     return res.status(400).json({ success: false, message: 'Name is required.' });
@@ -46,7 +46,8 @@ app.post('/api/users', async (req, res) => {
           avatar_url,
           personal_answers,
           family_answers,
-          professional_answers
+          professional_answers,
+          passcode
         })
         .eq('id', id)
         .select();
@@ -64,6 +65,7 @@ app.post('/api/users', async (req, res) => {
             personal_answers,
             family_answers,
             professional_answers,
+            passcode,
             created_at: new Date().toISOString()
           }
         ])
