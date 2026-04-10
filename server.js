@@ -372,8 +372,18 @@ app.post('/api/generate-plan', async (req, res) => {
 
 
   } catch (error) {
-    console.error('❌ Generation Error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Generation Error Details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to manifest your plan: ${error.message || 'Unknown Error'}`,
+      error: error.message,
+      code: error.code
+    });
   }
 });
 
@@ -423,8 +433,18 @@ app.post('/api/generate-archetype', async (req, res) => {
     res.json({ success: true, data: aiResponse });
 
   } catch (error) {
-    console.error('❌ Archetype Error:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('❌ Archetype Error Details:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to discover your archetype: ${error.message || 'Unknown Error'}`,
+      error: error.message,
+      code: error.code
+    });
   }
 });
 
@@ -469,8 +489,18 @@ app.get('/api/history/:userId', async (req, res) => {
     res.json({ success: true, data: historyData });
 
   } catch (error) {
-    console.error('[HISTORY ERROR]:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[HISTORY ERROR DETAILS]:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to load history: ${error.message || 'Unknown Error'}`,
+      error: error.message,
+      code: error.code
+    });
   }
 });
 
@@ -503,8 +533,18 @@ app.delete('/api/manifestations/:id', async (req, res) => {
     console.log(`[DELETE] ✅ Manifestation ${id} wiped from cosmos.`);
     res.json({ success: true, message: 'Manifestation permanently removed.' });
   } catch (error) {
-    console.error('[DELETE ERROR]:', error.message);
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[DELETE ERROR DETAILS]:', {
+      message: error.message,
+      code: error.code,
+      details: error.details,
+      hint: error.hint
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: `Failed to remove manifestation: ${error.message || 'Unknown Error'}`,
+      error: error.message,
+      code: error.code
+    });
   }
 });
 
